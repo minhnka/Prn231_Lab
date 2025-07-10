@@ -1,0 +1,120 @@
+﻿@page
+@model RazerPage.Pages.Admin.CreateModel
+@{
+    ViewData["Title"] = "Create Orchid";
+}
+
+<h1>Create New Orchid</h1>
+
+<div class="row">
+    <div class="col-md-8">
+        <form method="post">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+            <div class="form-group mb-3">
+                <label class="control-label">Name</label>
+                <input asp-for="Orchid.OrchidName" class="form-control" required />
+                <span asp-validation-for="Orchid.OrchidName" class="text-danger"></span>
+            </div>
+
+            <div class="form-group mb-3">
+                <label class="control-label">Description</label>
+                <textarea asp-for="Orchid.OrchidDescription" class="form-control" rows="3"></textarea>
+                <span asp-validation-for="Orchid.OrchidDescription" class="text-danger"></span>
+            </div>
+
+            <div class="form-group mb-3">
+                <label class="control-label">Price</label>
+                <input asp-for="Orchid.Price" class="form-control" type="number" step="0.01" min="0" required />
+                <span asp-validation-for="Orchid.Price" class="text-danger"></span>
+            </div>
+
+            <div class="form-group mb-3">
+                <label class="control-label">Image URL</label>
+                <input asp-for="Orchid.OrchidUrl" class="form-control" id="imageUrlInput" />
+                <span asp-validation-for="Orchid.OrchidUrl" class="text-danger"></span>
+            </div>
+
+            <div class="form-group mb-3">
+                <label class="control-label">Is Natural</label>
+                <select asp-for="Orchid.IsNatural" class="form-control">
+                    <option value="">Select Type...</option>
+                    <option value="true">Yes</option>
+                    <option value="false">No</option>
+                </select>
+                <span asp-validation-for="Orchid.IsNatural" class="text-danger"></span>
+            </div>
+
+            <div class="form-group mb-3">
+                <label class="control-label">Category</label>
+                <select asp-for="Orchid.CategoryId" class="form-control" asp-items="Model.CategorySelectList">
+                    <option value="">Select Category...</option>
+                </select>
+                <span asp-validation-for="Orchid.CategoryId" class="text-danger"></span>
+            </div>
+
+            <div class="form-group mt-4">
+                <button type="submit" class="btn btn-primary">Create</button>
+                <a asp-page="./Index" class="btn btn-secondary">Back to List</a>
+            </div>
+        </form>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                Preview
+            </div>
+            <div class="card-body">
+                <div id="imagePreviewContainer" class="text-center mb-3">
+                    <img id="imagePreview" src="" alt="Image preview" class="img-fluid" style="max-height: 200px; display: none;" />
+                    <div id="noImagePlaceholder" class="bg-light p-4 text-center">
+                        <em>No image preview available</em>
+                    </div>
+                </div>
+                <h5 id="namePreview" class="card-title text-center">New Orchid</h5>
+                <p id="pricePreview" class="card-text text-center lead">$0.00</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+
+    <script>
+        $(document).ready(function () {
+            // Live preview for name
+            $('input[name="Orchid.OrchidName"]').on('input', function () {
+                $('#namePreview').text($(this).val() || "New Orchid");
+            });
+
+            // Live preview for price
+            $('input[name="Orchid.Price"]').on('input', function () {
+                const price = parseFloat($(this).val()) || 0;
+                $('#pricePreview').text('$' + price.toFixed(2));
+            });
+
+            // Live preview for image
+            $('#imageUrlInput').on('input', function () {
+                const imageUrl = $(this).val();
+                if (imageUrl) {
+                    $('#imagePreview')
+                        .attr('src', imageUrl)
+                        .on('load', function() {
+                            $(this).show();
+                            $('#noImagePlaceholder').hide();
+                        })
+                        .on('error', function() {
+                            $(this).hide();
+                            $('#noImagePlaceholder').show().html('<em>Invalid image URL</em>');
+                        });
+                } else {
+                    $('#imagePreview').hide();
+                    $('#noImagePlaceholder').show().html('<em>No image preview available</em>');
+                }
+            });
+        });
+    </script>
+}

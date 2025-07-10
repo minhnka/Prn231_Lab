@@ -1,0 +1,172 @@
+﻿@page
+@model RazerPage.Pages.Admin.EditModel
+@{
+    ViewData["Title"] = "Edit Orchid";
+}
+
+<h1>Edit Orchid</h1>
+
+<div class="row">
+    <div class="col-md-8">
+        <form id="editOrchidForm">
+            <input type="hidden" id="orchidId" value="@Model.Orchid.OrchidId" />
+            @Html.AntiForgeryToken()
+
+            <div class="form-group mb-3">
+                <label class="control-label">Name</label>
+                <input class="form-control" id="orchidName" value="@Model.Orchid.OrchidName" required />
+                <span class="text-danger field-validation-error" data-valmsg-for="orchidName"></span>
+            </div>
+
+            <div class="form-group mb-3">
+                <label class="control-label">Description</label>
+                <textarea class="form-control" id="orchidDescription" rows="3">@Model.Orchid.OrchidDescription</textarea>
+                <span class="text-danger field-validation-error" data-valmsg-for="orchidDescription"></span>
+            </div>
+
+            <div class="form-group mb-3">
+                <label class="control-label">Price</label>
+                <input class="form-control" id="price" type="number" step="0.01" value="@Model.Orchid.Price" required />
+                <span class="text-danger field-validation-error" data-valmsg-for="price"></span>
+            </div>
+
+            <div class="form-group mb-3">
+                <label class="control-label">Image URL</label>
+                <input class="form-control" id="orchidUrl" value="@Model.Orchid.OrchidUrl" />
+                <span class="text-danger field-validation-error" data-valmsg-for="orchidUrl"></span>
+            </div>
+
+            <div class="form-group mb-3">
+                <label class="control-label">Is Natural</label>
+                <select class="form-control" id="isNatural">
+                    <option value="">Select...</option>
+                    @if (Model.Orchid.IsNatural == true)
+                    {
+                        <option value="true" selected>Yes</option>
+                        <option value="false">No</option>
+                    }
+                    else if (Model.Orchid.IsNatural == false)
+                    {
+                        <option value="true">Yes</option>
+                        <option value="false" selected>No</option>
+                    }
+                    else
+                    {
+                        <option value="true">Yes</option>
+                        <option value="false">No</option>
+                    }
+                </select>
+                <span class="text-danger field-validation-error" data-valmsg-for="isNatural"></span>
+            </div>
+
+            <div class="form-group mb-3">
+                <label class="control-label">Category</label>
+                <select class="form-control" id="categoryId" required>
+                    @if (Model.CategorySelectList != null)
+                    {
+                        foreach (var item in Model.CategorySelectList)
+                        {
+                            if (item.Value == Model.Orchid.CategoryId?.ToString())
+                            {
+                                <option value="@item.Value" selected>@item.Text</option>
+                            }
+                            else
+                            {
+                                <option value="@item.Value">@item.Text</option>
+                            }
+                        }
+                    }
+                </select>
+                <span class="text-danger field-validation-error" data-valmsg-for="categoryId"></span>
+            </div>
+
+            <div class="form-group mb-3">
+                <button type="submit" class="btn btn-primary">Save</button>
+                <a asp-page="./Index" class="btn btn-secondary">Back to List</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="alert alert-danger mt-3" id="errorContainer" style="display: none;"></div>
+
+@section Scripts {
+    @await Html.PartialAsync("_ValidationScriptsPartial")
+
+    <script>
+        $(document).ready(function () {
+            $('#editOrchidForm').submit(function (event) {
+                event.preventDefault();
+
+                // Reset error displays
+                $('.field-validation-error').text('');
+                $('#errorContainer').hide().text('');
+
+                const id = parseInt($('#orchidId').val());
+                const isNaturalValue = $('#isNatural').val();
+                const categoryIdValue = $('#categoryId').val();
+                const priceValue = $('#price').val();
+
+                let hasErrors = false;
+
+                if (!$('#orchidName').val().trim()) {
+                    $('[data-valmsg-for="orchidName"]').text('Name is required');
+                    hasErrors = true;
+                }
+
+                if (!priceValue) {
+                    $('[data-valmsg-for="price"]').text('Price is required');
+                    hasErrors = true;
+                }
+
+                if (!categoryIdValue) {
+                    $('[data-valmsg-for="categoryId"]').text('Category is required');
+                    hasErrors = true;
+                }
+
+                if (hasErrors) {
+                    return;
+                }
+
+                const orchidData = {
+                    orchidId: id,
+                    orchidName: $('#orchidName').val(),
+                    orchidDescription: $('#orchidDescription').val() || null,
+                    orchidUrl: $('#orchidUrl').val() || null,
+                    price: priceValue ? parseFloat(priceValue) : null,
+                    isNatural: isNaturalValue === 'true' ? true : isNaturalValue === 'false' ? false : null,
+                    categoryId: categoryIdValue ? parseInt(categoryIdValue) : null
+                };
+
+                console.log('Submitting orchid data:', orchidData);
+
+                const token = $('input[name="__RequestVerificationToken"]').val();
+
+                fetch(`?handler=UpdateOrchid&id=${id}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': token
+                    },
+                    body: JSON.stringify(orchidData)
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        return response.json().then(errorData => {
+                            throw new Error(errorData.message || `Status: ${response.status}`);
+                        });
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    alert('Orchid updated successfully');
+                    window.location.href = './Index';
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    $('#errorContainer').show().text('Error updating orchid: ' + error.message);
+                });
+            });
+        });
+    </script>
+}

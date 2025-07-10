@@ -1,0 +1,166 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - RazerPage</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/RazerPage.styles.css" asp-append-version="true" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" />
+</head>
+<body>
+    <header>
+        <nav class="navbar navbar-expand-sm navbar-light bg-white border-bottom box-shadow mb-3">
+            <div class="container">
+                <a class="navbar-brand" asp-area="" asp-page="/Index">RazerPage</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+                        aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" asp-area="" asp-page="/Index">Home</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" asp-area="" asp-page="/Privacy">Privacy</a>
+                        </li>
+                    </ul>
+                    <ul class="navbar-nav ms-auto">
+                        @if (User.IsInRole("2") || User.HasClaim(c => c.Type == "Role" && c.Value == "2"))
+                        {
+                            <li class="nav-item position-relative">
+                                <a class="nav-link text-dark" href="/User/Cart">
+                                    <i class="bi bi-cart3"></i> Cart
+                                    <span id="cartBadge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                        0
+                                    </span>
+                                </a>
+                            </li>
+                        }
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <div class="container">
+        <main role="main" class="pb-3">
+            @RenderBody()
+        </main>
+    </div>
+
+    <footer class="border-top footer text-muted mt-4">
+        <div class="container">
+            &copy; 2025 - RazerPage - <a asp-area="" asp-page="/Privacy">Privacy</a>
+        </div>
+    </footer>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+
+    <script>
+        // Cart management functions
+        function getCookieCart() {
+            const cartCookie = document.cookie
+                .split('; ')
+                .find(row => row.startsWith('orchidCart='));
+
+            if (cartCookie) {
+                try {
+                    const cart = JSON.parse(decodeURIComponent(cartCookie.split('=')[1]));
+                    console.log('Retrieved cart from cookie:', cart);
+                    return cart;
+                } catch (e) {
+                    console.error('Error parsing cart cookie', e);
+                    return [];
+                }
+            }
+
+            console.log('No cart cookie found, returning empty array');
+            return [];
+        }
+
+        function setCookieCart(cart) {
+            try {
+                // Set cookie to expire in 7 days
+                const expires = new Date();
+                expires.setTime(expires.getTime() + 7 * 24 * 60 * 60 * 1000);
+
+                const cartJson = JSON.stringify(cart);
+                console.log('Saving cart to cookie:', cart);
+                document.cookie = `orchidCart=${encodeURIComponent(cartJson)};expires=${expires.toUTCString()};path=/`;
+
+                // Update cart badge
+                updateCartBadge(cart);
+
+                // Test if cookie was set properly
+                setTimeout(() => {
+                    const savedCart = getCookieCart();
+                    console.log('Verification - cart saved correctly:', savedCart);
+                }, 100);
+            } catch (e) {
+                console.error('Error saving cart to cookie', e);
+            }
+        }
+
+        function updateCartBadge(cart) {
+            const badge = document.getElementById('cartBadge');
+            if (badge) {
+                const count = cart ? cart.reduce((total, item) => total + item.Quantity, 0) : 0;
+                badge.textContent = count;
+                badge.style.display = count > 0 ? 'inline-block' : 'none';
+                console.log('Updated cart badge, total items:', count);
+            }
+        }
+
+        function addToCart(orchidId, orchidName, price, imageUrl) {
+            try {
+                console.log(`Adding to cart: ${orchidName}, ID: ${orchidId}, Price: ${price}`);
+
+                // Get current cart
+                let cart = getCookieCart();
+
+                // Check if product already exists in cart
+                const orchidIdStr = orchidId.toString();
+                const existingItemIndex = cart.findIndex(item => item.Id === orchidIdStr);
+
+                if (existingItemIndex !== -1) {
+                    // Update quantity
+                    console.log('Item already in cart, updating quantity');
+                    cart[existingItemIndex].Quantity += 1;
+                } else {
+                    // Add new item
+                    console.log('Adding new item to cart');
+                    cart.push({
+                        Id: orchidIdStr,
+                        Name: orchidName,
+                        Price: price,
+                        Quantity: 1,
+                        ImageUrl: imageUrl
+                    });
+                }
+
+                // Save cart
+                setCookieCart(cart);
+
+                // Show confirmation
+                alert(`${orchidName} added to cart!`);
+            } catch (e) {
+                console.error('Error adding item to cart', e);
+                alert('Sorry, there was an error adding the item to your cart.');
+            }
+        }
+
+        // Initialize cart badge on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Page loaded, initializing cart badge');
+            const cart = getCookieCart();
+            updateCartBadge(cart);
+        });
+    </script>
+</body>
+</html>

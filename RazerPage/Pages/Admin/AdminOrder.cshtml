@@ -1,0 +1,155 @@
+﻿@page
+@using RazerPage.Pages.Admin
+@model RazerPage.Pages.Admin.AdminOrderModel
+@{
+    ViewData["Title"] = "Manage Orders";
+}
+<ul class="nav nav-tabs mb-4">
+    <li class="nav-item">
+        <a class="nav-link" asp-page="./Index">Manage Orchids</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link active" asp-page="./AdminOrder">Manage Orders</a>
+    </li>
+</ul>
+<h1>@ViewData["Title"]</h1>
+
+@if (!string.IsNullOrEmpty(Model.ErrorMessage))
+{
+    <div class="alert alert-danger">@Model.ErrorMessage</div>
+}
+
+<div class="row mb-3">
+    <div class="col-md-12">
+        <form method="get">
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label for="SearchTerm">Search:</label>
+                        <input type="text" class="form-control" id="SearchTerm" name="SearchTerm" value="@Model.SearchTerm" />
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label for="StatusFilter">Status:</label>
+                        <select class="form-control" id="StatusFilter" name="StatusFilter">
+                            <option value="">All</option>
+                            <option value="Pending" selected="@(Model.StatusFilter == "Pending")">Pending</option>
+                            <option value="Processing" selected="@(Model.StatusFilter == "Processing")">Processing</option>
+                            <option value="Shipped" selected="@(Model.StatusFilter == "Shipped")">Shipped</option>
+                            <option value="Delivered" selected="@(Model.StatusFilter == "Delivered")">Delivered</option>
+                            <option value="Cancelled" selected="@(Model.StatusFilter == "Cancelled")">Cancelled</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group mt-4">
+                        <button type="submit" class="btn btn-primary">Filter</button>
+                        <a asp-page="./AdminOrder" class="btn btn-secondary">Reset</a>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+@if (Model.SelectedOrder != null)
+{
+    <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h4>Order #@Model.SelectedOrder.Id Details</h4>
+            <a asp-page="./AdminOrder" class="btn btn-secondary btn-sm">Back to Orders</a>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5>Order Information</h5>
+                    <p><strong>Date:</strong> @(Model.SelectedOrder.OrderDate?.ToString("MM/dd/yyyy") ?? "N/A")</p>
+                    <p><strong>Status:</strong> @Model.SelectedOrder.OrderStatus</p>
+                    <p><strong>Total Amount:</strong> @Model.SelectedOrder.TotalAmount.ToString("C")</p>
+                </div>
+                <div class="col-md-6">
+                    <h5>Customer Information</h5>
+                    <p><strong>Name:</strong> @Model.SelectedOrder.CustomerName</p>
+                    <p><strong>Email:</strong> @Model.SelectedOrder.CustomerEmail</p>
+                    <p><strong>Account ID:</strong> @(Model.SelectedOrder.AccountId?.ToString() ?? "N/A")</p>
+                </div>
+            </div>
+
+            <h5 class="mt-4">Order Items</h5>
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Product</th>
+                        <th>Price</th>
+                        <th>Quantity</th>
+                        <th>Subtotal</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model.SelectedOrder.Items)
+                    {
+                        <tr>
+                            <td>
+                                @item.ProductName
+                                <a asp-page="./Index" asp-route-searchTerm="@item.ProductName" class="btn btn-sm btn-link">
+                                    View in Orchid Management
+                                </a>
+                            </td>
+                            <td>@item.Price.ToString("C")</td>
+                            <td>@item.Quantity</td>
+                            <td>@((item.Price * item.Quantity).ToString("C"))</td>
+                        </tr>
+                    }
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <th colspan="3" class="text-end">Total:</th>
+                        <th>@Model.SelectedOrder.TotalAmount.ToString("C")</th>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Order ID</th>
+                    <th>Date</th>
+                    <th>Customer</th>
+                    <th>Status</th>
+                    <th>Total</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.Orders.Any())
+                {
+                    @foreach (var order in Model.Orders)
+                    {
+                        <tr>
+                            <td>@order.Id</td>
+                            <td>@(order.OrderDate?.ToString("MM/dd/yyyy") ?? "N/A")</td>
+                            <td>@order.CustomerName</td>
+                            <td>@order.OrderStatus</td>
+                            <td>@order.TotalAmount.ToString("C")</td>
+                            <td>
+                                <a asp-page="./AdminOrder" asp-route-orderId="@order.Id" class="btn btn-primary btn-sm">View Details</a>
+                            </td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="6" class="text-center">No orders found</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}

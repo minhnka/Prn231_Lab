@@ -1,0 +1,373 @@
+﻿@page
+@model RazerPage.Pages.User.IndexModel
+@{
+    ViewData["Title"] = "Orchid User ";
+}
+
+<h1>Orchid Shop</h1>
+
+<!-- Status Messages -->
+@if (!string.IsNullOrEmpty(TempData["StatusMessage"] as string))
+{
+    <div class="alert alert-success alert-dismissible fade show mb-3">
+        @TempData["StatusMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<div class="alert alert-danger" asp-validation-summary="ModelOnly"></div>
+
+<!-- Search & Filter Form -->
+<form method="get" class="mb-4">
+    <div class="row g-3">
+        <div class="col-md-4">
+            <div class="input-group">
+                <input type="text" class="form-control" placeholder="Search orchids..." asp-for="SearchTerm">
+                <button class="btn btn-outline-secondary" type="submit">Search</button>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="input-group">
+                <span class="input-group-text">Sort By</span>
+                <select class="form-select" asp-for="SortBy" asp-items="Model.SortOptions"></select>
+                <select class="form-select" asp-for="Ascending">
+                    <option value="true">Ascending</option>
+                    <option value="false">Descending</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="col-md-2">
+            <select class="form-select" asp-for="PageSize">
+                <option value="5">5 per page</option>
+                <option value="10">10 per page</option>
+                <option value="25">25 per page</option>
+                <option value="50">50 per page</option>
+            </select>
+        </div>
+
+        <div class="col-md-3">
+            <div class="d-flex gap-2">
+                <button type="button" class="btn btn-outline-primary" data-bs-toggle="collapse" data-bs-target="#filterOptions">
+                    <i class="bi bi-funnel"></i> Filters
+                </button>
+                <button type="submit" class="btn btn-primary">Apply</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="collapse mt-3" id="filterOptions">
+        <div class="card card-body">
+            <div class="row">
+                <div class="col-md-4">
+                    <label class="form-label">Category</label>
+                    <select class="form-select" asp-for="CategoryId">
+                        <option value="">All Categories</option>
+                        <!-- Add categories dynamically from a service -->
+                    </select>
+                </div>
+
+                <div class="col-md-4">
+                    <label class="form-label">Price Range</label>
+                    <div class="input-group">
+                        <input type="number" class="form-control" placeholder="Min" asp-for="MinPrice">
+                        <span class="input-group-text">-</span>
+                        <input type="number" class="form-control" placeholder="Max" asp-for="MaxPrice">
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <label class="form-label">Type</label>
+                    <select class="form-select" asp-for="IsNatural">
+                        <option value="">All Types</option>
+                        <option value="true">Natural</option>
+                        <option value="false">Hybrid</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+
+<!-- Orchids Table -->
+<div class="table-responsive">
+    <table class="table table-striped table-hover">
+        <thead class="table-light">
+            <tr>
+                <th>ID</th>
+                <th>Image</th>
+                <th>Name</th>
+                <th>Description</th>
+                <th>Category</th>
+                <th>Price</th>
+                <th>Type</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (!Model.Orchid.Any())
+            {
+                <tr>
+                    <td colspan="8" class="text-center py-4">
+                        <em>No orchids found matching your criteria.</em>
+                    </td>
+                </tr>
+            }
+            else
+            {
+                @foreach (var orchid in Model.Orchid)
+                {
+                    <tr>
+                        <td>@orchid.OrchidId</td>
+                        <td>
+                            @if (!string.IsNullOrEmpty(orchid.OrchidUrl))
+                            {
+                                <img src="@orchid.OrchidUrl" alt="@orchid.OrchidName" class="img-thumbnail" style="max-height: 50px; max-width: 50px;" />
+                            }
+                            else
+                            {
+                                <span class="text-muted">No image</span>
+                            }
+                    </td>
+                    <td>@orchid.OrchidName</td>
+                    <td>
+                        @(orchid.OrchidDescription?.Length > 50
+                                            ? orchid.OrchidDescription.Substring(0, 50) + "..."
+                                            : orchid.OrchidDescription ?? "No description")
+                </td>
+                <td>@(orchid.CategoryName ?? "Uncategorized")</td>
+                <td>@orchid.Price?.ToString("C")</td>
+                <td>@(orchid.IsNatural == true ? "Natural" : "Hybrid")</td>
+                <td>
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-sm btn-primary quick-view-btn"
+                                data-id="@orchid.OrchidId"
+                                data-name="@orchid.OrchidName"
+                                data-description="@orchid.OrchidDescription"
+                                data-category="@orchid.CategoryName"
+                                data-price="@orchid.Price?.ToString("C")"
+                                data-type="@(orchid.IsNatural == true ? "Natural" : "Hybrid")"
+                                data-image="@orchid.OrchidUrl">
+                            <i class="bi bi-eye"></i> View Detail
+                        </button>
+                        <button type="button" class="btn btn-sm btn-success add-to-cart-btn"
+                                data-id="@orchid.OrchidId"
+                                data-name="@orchid.OrchidName"
+                                data-price="@orchid.Price"
+                                data-image="@orchid.OrchidUrl">
+                            <i class="bi bi-cart"></i> Add to Cart
+                        </button>
+                    </div>
+                </td>
+            </tr>
+                        }
+            }
+        </tbody>
+    </table>
+</div>
+
+
+<!-- Quick View Modal -->
+<div class="modal fade" id="quickViewModal" tabindex="-1" aria-labelledby="quickViewModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="quickViewModalLabel">Orchid Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center mb-3">
+                    <img id="modalImage" class="img-fluid" style="max-height: 200px;" alt="Orchid Image" />
+                </div>
+                <p><strong>ID:</strong> <span id="modalId"></span></p>
+                <p><strong>Name:</strong> <span id="modalName"></span></p>
+                <p><strong>Description:</strong> <span id="modalDescription"></span></p>
+                <p><strong>Category:</strong> <span id="modalCategory"></span></p>
+                <p><strong>Price:</strong> <span id="modalPrice"></span></p>
+                <p><strong>Type:</strong> <span id="modalType"></span></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Quick view functionality
+            const quickViewButtons = document.querySelectorAll('.quick-view-btn');
+            quickViewButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const id = this.getAttribute('data-id');
+                    const name = this.getAttribute('data-name');
+                    const description = this.getAttribute('data-description');
+                    const category = this.getAttribute('data-category');
+                    const price = this.getAttribute('data-price');
+                    const type = this.getAttribute('data-type');
+                    const imageUrl = this.getAttribute('data-image');
+
+                    document.getElementById('modalId').textContent = id;
+                    document.getElementById('modalName').textContent = name;
+                    document.getElementById('modalDescription').textContent = description || 'No description available';
+                    document.getElementById('modalCategory').textContent = category || 'Uncategorized';
+                    document.getElementById('modalPrice').textContent = price || 'Not priced';
+                    document.getElementById('modalType').textContent = type;
+
+                    const modalImage = document.getElementById('modalImage');
+                    if (imageUrl && imageUrl !== "null") {
+                        modalImage.src = imageUrl;
+                        modalImage.style.display = 'block';
+                    } else {
+                        modalImage.style.display = 'none';
+                    }
+
+                    const modal = new bootstrap.Modal(document.getElementById('quickViewModal'));
+                    modal.show();
+                });
+            });
+
+            // Cart functions using localStorage
+            // Function to get cart from localStorage
+            function getCart() {
+                try {
+                    const cartJson = localStorage.getItem('orchidCart');
+                    if (cartJson) {
+                        return JSON.parse(cartJson);
+                    }
+                } catch (e) {
+                    console.error('Error parsing cart from localStorage', e);
+                }
+                return [];
+            }
+
+            // Function to save cart to localStorage
+            function setCart(cart) {
+                try {
+                    localStorage.setItem('orchidCart', JSON.stringify(cart));
+                    console.log('Cart saved to localStorage:', cart);
+                } catch (e) {
+                    console.error('Error saving cart to localStorage', e);
+                }
+            }
+
+            // Add to cart functionality with localStorage
+            const addToCartButtons = document.querySelectorAll('.add-to-cart-btn');
+            addToCartButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    try {
+                        const id = this.getAttribute('data-id');
+                        const name = this.getAttribute('data-name');
+
+                        // Get price and ensure it's a valid number
+                        let price = 0;
+                        const priceAttr = this.getAttribute('data-price');
+                        if (priceAttr) {
+                            // Remove currency symbols and commas
+                            price = parseFloat(priceAttr.replace(/[$,]/g, ''));
+                            if (isNaN(price)) {
+                                console.error("Invalid price format:", priceAttr);
+                                price = 0;
+                            }
+                        }
+
+                        // Get image directly from data attribute if available
+                        let imageUrl = this.getAttribute('data-image');
+                        if (!imageUrl) {
+                            // Fallback to finding the image in the row
+                            imageUrl = this.closest('tr').querySelector('img')?.src || '';
+                        }
+
+                        console.log(`Adding to cart: ID=${id}, Name=${name}, Price=${price}, Image=${imageUrl}`);
+
+                        // Get current cart
+                        let cart = getCart();
+                        console.log("Current cart before adding:", cart);
+
+                        // Check if product already exists
+                        const existingItemIndex = cart.findIndex(item => item.Id === id.toString());
+
+                        if (existingItemIndex !== -1) {
+                            // Update quantity
+                            cart[existingItemIndex].Quantity += 1;
+                            console.log(`Updated quantity for ${name}`);
+                        } else {
+                            // Add new item
+                            cart.push({
+                                Id: id.toString(),
+                                Name: name,
+                                Price: price,
+                                Quantity: 1,
+                                ImageUrl: imageUrl
+                            });
+                            console.log(`Added new item: ${name}`);
+                        }
+
+                        // Save cart
+                        setCart(cart);
+
+                        // Update badge in navbar
+                        updateCartBadge(cart);
+
+                        // Update count in view cart button
+                        updateCartCount();
+
+                        // Show visual feedback
+                        const thisButton = this;
+                        thisButton.innerHTML = '<i class="bi bi-check"></i> Added';
+                        thisButton.classList.add('btn-outline-success');
+                        thisButton.classList.remove('btn-success');
+
+                        setTimeout(() => {
+                            thisButton.innerHTML = '<i class="bi bi-cart"></i> Add to Cart';
+                            thisButton.classList.add('btn-success');
+                            thisButton.classList.remove('btn-outline-success');
+                        }, 1500);
+
+                        // Show confirmation
+                        alert(`${name} added to cart!`);
+                    } catch (error) {
+                        console.error("Error in add to cart:", error);
+                        alert("There was an error adding this item to your cart.");
+                    }
+                });
+            });
+
+            // Update the cart badge in the navbar
+            function updateCartBadge(cart) {
+                const badge = document.getElementById('cartBadge');
+                if (badge) {
+                    const count = cart ? cart.reduce((total, item) => total + item.Quantity, 0) : 0;
+                    badge.textContent = count;
+                    badge.style.display = count > 0 ? 'inline-block' : 'none';
+                }
+            }
+
+            // Update cart count in the View Cart button
+            function updateCartCount() {
+                try {
+                    const cart = getCart();
+                    console.log("Cart for count update:", cart);
+
+                    let count = 0;
+                    if (Array.isArray(cart)) {
+                        count = cart.reduce((total, item) => total + (item.Quantity || 0), 0);
+                    }
+
+                    const cartCountElements = document.querySelectorAll('.cart-count');
+                    cartCountElements.forEach(element => {
+                        element.textContent = count;
+                    });
+                } catch (e) {
+                    console.error("Error updating cart count:", e);
+                }
+            }
+
+            // Initialize cart count on page load
+            updateCartCount();
+            updateCartBadge(getCart());
+        });
+    </script>
+}

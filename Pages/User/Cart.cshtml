@@ -1,0 +1,204 @@
+@page
+@model RazerPage.Pages.User.Cart
+@{
+    ViewData["Title"] = "Shopping Cart";
+}
+
+<div class="container my-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Your Shopping Cart</h1>
+        <a asp-page="/User/Index" class="btn btn-outline-primary">
+            <i class="bi bi-arrow-left"></i> Continue Shopping
+        </a>
+    </div>
+
+    <div id="cartContainer">
+        <div class="text-center py-5" id="emptyCart">
+            <i class="bi bi-cart-x" style="font-size: 4rem; color: #adb5bd;"></i>
+            <h3 class="mt-3">Your cart is empty</h3>
+            <p class="text-muted">Looks like you haven't added any orchids to your cart yet.</p>
+            <a asp-page="/User/Index" class="btn btn-primary mt-2">Browse Orchids</a>
+        </div>
+
+        <div id="cartContent" style="display: none;">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width: 15%">Image</th>
+                            <th style="width: 30%">Product</th>
+                            <th style="width: 15%">Price</th>
+                            <th style="width: 20%">Quantity</th>
+                            <th style="width: 15%">Subtotal</th>
+                            <th style="width: 5%"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="cartItems">
+                        <!-- Cart items will be loaded here -->
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="row mt-4">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">Order Summary</h5>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Subtotal:</span>
+                                <span>$<span id="cartSubtotal">0.00</span></span>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <span>Shipping:</span>
+                                <span>$<span id="shippingCost">5.00</span></span>
+                            </div>
+                            <hr>
+                            <div class="d-flex justify-content-between fw-bold">
+                                <span>Total:</span>
+                                <span>$<span id="orderTotal">0.00</span></span>
+                            </div>
+                            <button id="checkoutButton" class="btn btn-success w-100 mt-3">
+                                Proceed to Checkout
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">Cart Actions</h5>
+                            <button id="clearCartBtn" class="btn btn-outline-danger mb-2 w-100">
+                                <i class="bi bi-trash"></i> Clear Cart
+                            </button>
+                            <a asp-page="/User/Index" class="btn btn-outline-primary w-100">
+                                <i class="bi bi-arrow-left"></i> Continue Shopping
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            loadCart();
+
+            // Set up event listeners
+            document.getElementById('clearCartBtn')?.addEventListener('click', clearCart);
+            document.getElementById('checkoutButton')?.addEventListener('click', proceedToCheckout);
+        });
+
+        function loadCart() {
+            const cart = getCookieCart();
+            const cartContent = document.getElementById('cartContent');
+            const emptyCart = document.getElementById('emptyCart');
+            const cartItems = document.getElementById('cartItems');
+
+            if (!cart || cart.length === 0) {
+                cartContent.style.display = 'none';
+                emptyCart.style.display = 'block';
+                return;
+            }
+
+            cartContent.style.display = 'block';
+            emptyCart.style.display = 'none';
+
+            // Clear previous items
+            cartItems.innerHTML = '';
+
+            // Calculate total
+            let subtotal = 0;
+
+            // Add each item to the table
+            cart.forEach(item => {
+                const itemSubtotal = item.Price * item.Quantity;
+                subtotal += itemSubtotal;
+
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                        <td>
+                            <img src="${item.ImageUrl || '/images/no-image.png'}" alt="${item.Name}"
+                                class="img-thumbnail" style="width: 80px; height: 80px; object-fit: cover;">
+                        </td>
+                        <td>
+                            <h6 class="mb-0">${item.Name}</h6>
+                            <small class="text-muted">ID: ${item.Id}</small>
+                        </td>
+                        <td>$${parseFloat(item.Price).toFixed(2)}</td>
+                        <td>
+                            <div class="input-group" style="max-width: 150px">
+                                <button class="btn btn-outline-secondary"
+                                    onclick="updateQuantity('${item.Id}', -1)">-</button>
+                                <input type="text" class="form-control text-center"
+                                    value="${item.Quantity}" readonly>
+                                <button class="btn btn-outline-secondary"
+                                    onclick="updateQuantity('${item.Id}', 1)">+</button>
+                            </div>
+                        </td>
+                        <td>$${itemSubtotal.toFixed(2)}</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-danger"
+                                onclick="removeItem('${item.Id}')">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </td>
+                    `;
+
+                cartItems.appendChild(row);
+            });
+
+            // Update summary
+            document.getElementById('cartSubtotal').textContent = subtotal.toFixed(2);
+
+            const shippingCost = subtotal > 0 ? 5.00 : 0.00;
+            document.getElementById('shippingCost').textContent = shippingCost.toFixed(2);
+
+            const total = subtotal + shippingCost;
+            document.getElementById('orderTotal').textContent = total.toFixed(2);
+        }
+
+        function updateQuantity(id, change) {
+            let cart = getCookieCart();
+            const index = cart.findIndex(item => item.Id === id);
+
+            if (index !== -1) {
+                cart[index].Quantity += change;
+
+                // Remove item if quantity reaches 0
+                if (cart[index].Quantity <= 0) {
+                    cart.splice(index, 1);
+                }
+
+                setCookieCart(cart);
+                loadCart();
+            }
+        }
+
+        function removeItem(id) {
+            if (confirm('Are you sure you want to remove this item from your cart?')) {
+                let cart = getCookieCart();
+                const index = cart.findIndex(item => item.Id === id);
+
+                if (index !== -1) {
+                    cart.splice(index, 1);
+                    setCookieCart(cart);
+                    loadCart();
+                }
+            }
+        }
+
+        function clearCart() {
+            if (confirm('Are you sure you want to clear your entire cart?')) {
+                setCookieCart([]);
+                loadCart();
+            }
+        }
+
+        function proceedToCheckout() {
+            alert('Checkout functionality will be implemented soon!');
+        }
+    </script>
+}
