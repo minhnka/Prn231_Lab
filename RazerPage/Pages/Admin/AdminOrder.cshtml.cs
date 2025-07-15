@@ -40,6 +40,11 @@ namespace RazerPage.Pages.Admin
 
         public async Task<IActionResult> OnGetAsync()
         {
+
+            if (!User.Identity?.IsAuthenticated ?? true)
+            {
+                return RedirectToPage("/Login"); // or RedirectToPage("/Account/Login") if that's your login page
+            }
             if (OrderId.HasValue)
             {
                 // Load a specific order's details

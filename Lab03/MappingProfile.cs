@@ -11,6 +11,8 @@ namespace Lab03
             // Orchid -> OrchidDto
             CreateMap<Orchid, OrchidController.OrchidDto>()
                 .ForMember(dest => dest.CategoryName, opt => opt.MapFrom(src => src.Category != null ? src.Category.CategoryName : null));
+
+
             
             // CreateOrchidDto -> Orchid
             CreateMap<OrchidController.CreateOrchidDto, Orchid>();

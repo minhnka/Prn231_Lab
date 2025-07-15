@@ -91,17 +91,6 @@ namespace Lab03.Controllers
         {
             try
             {
-                // Check if AccountId is already taken
-                var accountById = _accountService.GetById(request.AccountId);
-                if (accountById != null)
-                {
-                    return BadRequest(new
-                    {
-                        Success = false,
-                        Message = "Account ID already exists."
-                    });
-                }
-
                 // Check if Email is already taken
                 var allAccounts = _accountService.GetAll();
                 var accountByEmail = allAccounts.FirstOrDefault(a => a.Email == request.Email);
@@ -116,11 +105,10 @@ namespace Lab03.Controllers
 
                 var account = new Account
                 {
-                    AccountId = request.AccountId,
                     AccountName = request.AccountName,
                     Email = request.Email,
                     Password = request.Password,
-                    RoleId = 1, // Default role
+                    RoleId = 1 // Default role: User
                 };
 
                 _accountService.Add(account);
@@ -137,10 +125,11 @@ namespace Lab03.Controllers
                 {
                     Success = false,
                     Message = "An error occurred while creating the account.",
-                    Error = ex.Message
+                    Error = ex.InnerException?.Message ?? ex.Message
                 });
             }
         }
+
 
 
 
@@ -153,7 +142,6 @@ namespace Lab03.Controllers
 
         public class RegisterRequest
         {
-            public int AccountId { get; set; }
 
             public string AccountName { get; set; }
             public string Email { get; set; }

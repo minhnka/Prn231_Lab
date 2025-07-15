@@ -145,7 +145,6 @@ namespace Lab03.Controllers
 
         public class CreateOrchidDto
         {
-            public int OrchidId { get; set; }
             [Required]
             [StringLength(100)]
             public string? OrchidName { get; set; }

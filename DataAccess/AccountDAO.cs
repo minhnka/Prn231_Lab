@@ -40,6 +40,12 @@ namespace DataAccess
 
         public void Add(Account account)
         {
+            // Optional: check if email already exists
+            if (dbContext.Accounts.Any(a => a.Email == account.Email))
+            {
+                throw new InvalidOperationException("An account with this email already exists.");
+            }
+
             dbContext.Accounts.Add(account);
             dbContext.SaveChanges();
         }

@@ -52,7 +52,7 @@ public partial class ProductManagementDbContext : DbContext
             entity.ToTable("accounts");
 
             entity.Property(e => e.AccountId)
-                .ValueGeneratedNever()
+                .ValueGeneratedOnAdd()
                 .HasColumnName("account_id");
             entity.Property(e => e.AccountName)
                 .HasMaxLength(100)
@@ -95,7 +95,7 @@ public partial class ProductManagementDbContext : DbContext
             entity.ToTable("orchids");
 
             entity.Property(e => e.OrchidId)
-                .ValueGeneratedNever()
+                .ValueGeneratedOnAdd()
                 .HasColumnName("orchid_id");
             entity.Property(e => e.CategoryId).HasColumnName("category_id");
             entity.Property(e => e.IsNatural).HasColumnName("is_natural");
