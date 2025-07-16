@@ -37,7 +37,7 @@ app.UseAuthorization();
 
 // Redirect root URL to Login page
 app.MapGet("/", () => Results.Redirect("/Login"));
-
+app.MapControllers();
 app.MapRazorPages();
 
 app.Run();
