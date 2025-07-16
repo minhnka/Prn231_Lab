@@ -108,7 +108,7 @@ namespace Lab03.Controllers
                     AccountName = request.AccountName,
                     Email = request.Email,
                     Password = request.Password,
-                    RoleId = 1 // Default role: User
+                    RoleId = 2 // Default role: User
                 };
 
                 _accountService.Add(account);
